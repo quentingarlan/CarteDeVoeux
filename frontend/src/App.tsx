@@ -5,8 +5,10 @@ import { FocusPicker, type Focus } from './components/FocusPicker'
 import { PhotoDrop } from './components/PhotoDrop'
 import { preparePhoto, type PreparedPhoto } from './photo'
 
+const BUY_ME_A_COFFEE_URL = 'https://buymeacoffee.com/quentingarlan'
+
 export default function App() {
-  const [effects, setEffects] = useState<Effect[]>([])
+  const [, setEffects] = useState<Effect[]>([])
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [photo, setPhoto] = useState<PreparedPhoto | null>(null)
   const [uploadId, setUploadId] = useState<string | null>(null)
@@ -40,14 +42,6 @@ export default function App() {
       setError((e as Error).message)
     }
   }
-
-  const toggle = (id: string) =>
-    setSelected((current) => {
-      const next = new Set(current)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
 
   const generate = async () => {
     if (!photo) return
@@ -145,7 +139,10 @@ export default function App() {
       </main>
 
       <footer>
-        Vos photos sont supprimées automatiquement sous 24 h. Aucun visage n'a été blessé durablement.
+        <a className="coffee" href={BUY_ME_A_COFFEE_URL} target="_blank" rel="noopener noreferrer">
+          ☕ Offrez-moi un café
+        </a>
+        <p>Vos photos sont supprimées automatiquement sous 24 h. Aucun visage n'a été blessé durablement.</p>
       </footer>
     </>
   )

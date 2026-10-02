@@ -369,3 +369,22 @@ footer {
 .editor-preview canvas.clickable {
   cursor: crosshair;
 }
+
+footer p {
+  margin: 12px 0 0;
+}
+
+.coffee {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: #ffdd00;
+  color: #000;
+  font-weight: 900;
+  text-decoration: none;
+  transition: transform 0.15s;
+}
+
+.coffee:hover {
+  transform: rotate(-3deg) scale(1.05);
+}

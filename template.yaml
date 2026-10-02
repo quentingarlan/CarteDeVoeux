@@ -1,12 +1,12 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: CarteDeVoeuxDebiles.co - cartes de voeux deformees (React + Lambda .NET)
+Description: CarteDeVoeuxDebiles - cartes de voeux deformees (React + Lambda .NET)
 
 Parameters:
   DomainName:
     Type: String
     Default: ''
-    Description: Domaine public (ex. cartedevoeuxdebiles.co). Vide = URL CloudFront par defaut.
+    Description: Domaine public (ex. cartesvoeuxdebiles.com). Vide = URL CloudFront par defaut.
   CertificateArn:
     Type: String
     Default: ''
@@ -135,7 +135,7 @@ Resources:
     Properties:
       DistributionConfig:
         Enabled: true
-        Comment: CarteDeVoeuxDebiles.co
+        Comment: CarteDeVoeuxDebiles
         DefaultRootObject: index.html
         HttpVersion: http2and3
         PriceClass: PriceClass_100

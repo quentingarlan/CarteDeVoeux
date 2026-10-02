@@ -1,17 +1,17 @@
 <#
 .SYNOPSIS
-    Déploie CarteDeVoeuxDebiles.co : stack SAM (Lambda, S3, CloudFront), puis le site React.
+    Déploie cartesvoeuxdebiles.com : stack SAM (Lambda, S3, CloudFront), puis le site React.
 
 .EXAMPLE
     ./deploy.ps1
-    ./deploy.ps1 -DomainName cartedevoeuxdebiles.co -CertificateArn arn:aws:acm:us-east-1:123456789012:certificate/... -HostedZoneId Z0123456789
+    ./deploy.ps1 -DomainName '' -CertificateArn ''   # sans domaine : URL CloudFront par défaut
 #>
 param(
     [string]$StackName = 'cartedevoeuxdebiles',
-    [string]$Region = 'eu-west-3',
-    [string]$DomainName = '',
-    [string]$CertificateArn = '',
-    [string]$HostedZoneId = ''
+    [string]$Region = 'eu-central-1',
+    [string]$DomainName = 'cartesvoeuxdebiles.com',
+    [string]$CertificateArn = 'arn:aws:acm:us-east-1:824851412494:certificate/c1a6e751-c0d8-4bee-a4c1-7ba60a528a89',
+    [string]$HostedZoneId = 'Z01992693P3NXAKLS9NB7'
 )
 
 $ErrorActionPreference = 'Stop'
