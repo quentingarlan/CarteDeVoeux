@@ -1,3 +1,5 @@
+import { t } from '../i18n'
+
 export type Focus = { x: number; y: number }
 
 type Props = { src: string; focus: Focus; onChange: (focus: Focus) => void }
@@ -15,7 +17,7 @@ export function FocusPicker({ src, focus, onChange }: Props) {
         })
       }}
     >
-      <img src={src} alt="Votre photo" draggable={false} />
+      <img src={src} alt={t.yourPhoto} draggable={false} />
       <span className="focus-marker" style={{ left: `${focus.x * 100}%`, top: `${focus.y * 100}%` }} aria-hidden />
     </div>
   )

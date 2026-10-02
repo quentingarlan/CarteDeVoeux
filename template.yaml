@@ -129,6 +129,27 @@ Resources:
         SigningBehavior: always
         SigningProtocol: sigv4
 
+  # S3 ne sert pas index.html pour un dossier : /en/ et /en deviennent /en/index.html.
+  IndexRewriteFunction:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: !Sub '${AWS::StackName}-index-rewrite'
+      AutoPublish: true
+      FunctionConfig:
+        Comment: Dossiers vers index.html
+        Runtime: cloudfront-js-2.0
+      FunctionCode: |
+        function handler(event) {
+          var request = event.request;
+          var uri = request.uri;
+          if (uri.endsWith('/')) {
+            request.uri = uri + 'index.html';
+          } else if (uri.lastIndexOf('.') < uri.lastIndexOf('/')) {
+            request.uri = uri + '/index.html';
+          }
+          return request;
+        }
+
   # Un seul domaine : / -> site React, /api/* -> Lambda. Pas de CORS a gerer pour l'API.
   Distribution:
     Type: AWS::CloudFront::Distribution
@@ -165,6 +186,9 @@ Resources:
           ViewerProtocolPolicy: redirect-to-https
           Compress: true
           CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # Managed-CachingOptimized
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt IndexRewriteFunction.FunctionMetadata.FunctionARN
         CacheBehaviors:
           - PathPattern: /api/*
             TargetOriginId: api

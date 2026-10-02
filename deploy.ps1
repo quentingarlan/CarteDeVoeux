@@ -50,10 +50,10 @@ try {
     finally { Pop-Location }
 
     Write-Host '==> Publication sur S3 / CloudFront' -ForegroundColor Cyan
-    # Les fichiers de dist/assets ont un hash dans leur nom : cache long. index.html : toujours revalidé.
-    Invoke-Native { aws s3 sync frontend/dist "s3://$bucket" --delete --region $Region --exclude index.html --cache-control 'public,max-age=31536000,immutable' }
-    Invoke-Native { aws s3 cp frontend/dist/index.html "s3://$bucket/index.html" --region $Region --cache-control 'no-cache' }
-    Invoke-Native { aws cloudfront create-invalidation --distribution-id $distribution --paths '/' '/index.html' | Out-Null }
+    # Les fichiers de dist/assets ont un hash dans leur nom : cache long. Les pages HTML (/ et /en/) : toujours revalidées.
+    Invoke-Native { aws s3 sync frontend/dist "s3://$bucket" --delete --region $Region --exclude '*.html' --cache-control 'public,max-age=31536000,immutable' }
+    Invoke-Native { aws s3 sync frontend/dist "s3://$bucket" --region $Region --exclude '*' --include '*.html' --cache-control 'no-cache' }
+    Invoke-Native { aws cloudfront create-invalidation --distribution-id $distribution --paths '/' '/index.html' '/en/index.html' | Out-Null }
 
     Write-Host "`nC'est en ligne : $(& $output 'SiteUrl')" -ForegroundColor Green
 }

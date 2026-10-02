@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { t } from '../i18n'
 
 type Props = { onFile: (file: File) => void; compact?: boolean }
 
@@ -37,12 +38,12 @@ export function PhotoDrop({ onFile, compact }: Props) {
         }}
       />
       {compact ? (
-        <span>📷 Changer de photo</span>
+        <span>{t.drop.change}</span>
       ) : (
         <>
           <span className="dropzone-icon">📸</span>
-          <strong>Glissez une photo ici</strong>
-          <span>ou cliquez pour en choisir une (tonton Michel au réveillon, le chat, le boss…)</span>
+          <strong>{t.drop.title}</strong>
+          <span>{t.drop.subtitle}</span>
         </>
       )}
     </div>

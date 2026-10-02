@@ -3,6 +3,7 @@ import { generateImages, getEffects, uploadPhoto, type Effect, type GeneratedIma
 import { CardEditor } from './components/CardEditor'
 import { FocusPicker, type Focus } from './components/FocusPicker'
 import { PhotoDrop } from './components/PhotoDrop'
+import { effectName, switchLanguage, t } from './i18n'
 import { preparePhoto, type PreparedPhoto } from './photo'
 
 const BUY_ME_A_COFFEE_URL = 'https://buymeacoffee.com/quentingarlan'
@@ -25,7 +26,7 @@ export default function App() {
         setEffects(list)
         setSelected(new Set(list.map((e) => e.id)))
       })
-      .catch(() => setError("Impossible de joindre l'API. Elle est peut-être partie fêter la nouvelle année."))
+      .catch(() => setError(t.apiUnreachable))
   }, [])
 
   const choosePhoto = async (file: File) => {
@@ -50,11 +51,11 @@ export default function App() {
     try {
       let id = uploadId
       if (!id) {
-        setBusy('Envoi de la photo…')
+        setBusy(t.uploading)
         id = await uploadPhoto(photo.blob)
         setUploadId(id)
       }
-      setBusy('Déformation en cours… 🌀')
+      setBusy(t.distorting)
       const images = await generateImages({
         uploadId: id,
         effects: [...selected],
@@ -62,7 +63,7 @@ export default function App() {
         focusY: focus.y,
         intensity,
       })
-      setResults(images)
+      setResults(images.map((image) => ({ ...image, name: effectName(image.effectId, image.name) })))
       setTimeout(() => document.getElementById('results')?.scrollIntoView({ behavior: 'smooth' }), 50)
     } catch (e) {
       setError((e as Error).message)
@@ -79,32 +80,35 @@ export default function App() {
   return (
     <>
       <header className="hero">
+        <button className="lang-switch" onClick={() => switchLanguage(t.switchTo.lang)} lang={t.switchTo.lang}>
+          {t.switchTo.label}
+        </button>
         <h1>
           CarteDeVoeux<span>Debiles</span>
         </h1>
-        <p>Une photo. Des déformations. Des vœux que personne n'oubliera (malheureusement).</p>
+        <p>{t.tagline}</p>
       </header>
 
       <main>
         <section className="panel">
-          <h2>1. Choisissez une photo</h2>
+          <h2>{t.step1}</h2>
           {!photo ? (
             <PhotoDrop onFile={choosePhoto} />
           ) : (
             <div className="setup">
               <div>
                 <FocusPicker src={photo.previewUrl} focus={focus} onChange={setFocus} />
-                <p className="hint">👆 Cliquez sur la photo pour placer le centre de la déformation (visez le nez).</p>
+                <p className="hint">{t.focusHint}</p>
                 <PhotoDrop onFile={choosePhoto} compact />
               </div>
               <div className="settings">
-                <h3>2. Réglez le n'importe quoi</h3>
+                <h3>{t.step2}</h3>
                 <label>
-                  Intensité : <strong>{Math.round(intensity * 100)} %</strong>
+                  {t.intensity} <strong>{t.percent(intensity)}</strong>
                   <input type="range" min={0.1} max={1} step={0.05} value={intensity} onChange={(e) => setIntensity(Number(e.target.value))} />
                 </label>
                 <button className="primary big" onClick={generate} disabled={!!busy || selected.size === 0}>
-                  {busy ?? '🤪 Déformer !'}
+                  {busy ?? t.distort}
                 </button>
               </div>
             </div>
@@ -114,8 +118,8 @@ export default function App() {
 
         {results.length > 0 && (
           <section className="panel" id="results">
-            <h2>Le résultat (désolé)</h2>
-            <p className="hint">Choisissez votre préférée pour en faire une carte.</p>
+            <h2>{t.resultsTitle}</h2>
+            <p className="hint">{t.resultsHint}</p>
             <div className="grid">
               {results.map((image) => (
                 <button
@@ -140,9 +144,9 @@ export default function App() {
 
       <footer>
         <a className="coffee" href={BUY_ME_A_COFFEE_URL} target="_blank" rel="noopener noreferrer">
-          ☕ Offrez-moi un café
+          {t.coffee}
         </a>
-        <p>Vos photos sont supprimées automatiquement sous 24 h. Aucun visage n'a été blessé durablement.</p>
+        <p>{t.privacy}</p>
       </footer>
     </>
   )

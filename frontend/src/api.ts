@@ -1,3 +1,5 @@
+import { t } from './i18n'
+
 export type Effect = { id: string; name: string; description: string }
 
 export type GeneratedImage = { effectId: string; name: string; url: string }
@@ -19,7 +21,7 @@ async function readJson<T>(response: Response): Promise<T> {
     } catch {
       // corps vide ou non JSON
     }
-    throw new Error(message ?? `Le serveur a répondu ${response.status}`)
+    throw new Error(t.api.byStatus[response.status] ?? message ?? t.api.status(response.status))
   }
   return response.json() as Promise<T>
 }
@@ -35,7 +37,7 @@ export async function uploadPhoto(photo: Blob): Promise<string> {
   )
 
   const response = await fetch(uploadUrl, { method: 'PUT', body: photo, headers: { 'Content-Type': contentType } })
-  if (!response.ok) throw new Error("L'envoi de la photo a échoué.")
+  if (!response.ok) throw new Error(t.api.uploadFailed)
   return uploadId
 }
 

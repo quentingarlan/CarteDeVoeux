@@ -1,3 +1,5 @@
+import { t } from './i18n'
+
 export type PreparedPhoto = { blob: Blob; previewUrl: string; width: number; height: number }
 
 const MAX_SIDE = 2400
@@ -7,7 +9,7 @@ const MAX_SIDE = 2400
  * l'orientation EXIF est appliquée par le navigateur et les métadonnées (GPS…) disparaissent.
  */
 export async function preparePhoto(file: File): Promise<PreparedPhoto> {
-  if (!file.type.startsWith('image/')) throw new Error("Ce fichier n'est pas une image.")
+  if (!file.type.startsWith('image/')) throw new Error(t.photo.notImage)
 
   const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
   const ratio = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height))
@@ -22,7 +24,7 @@ export async function preparePhoto(file: File): Promise<PreparedPhoto> {
   bitmap.close()
 
   const blob = await new Promise<Blob>((resolve, reject) =>
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Conversion impossible.'))), 'image/jpeg', 0.92),
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error(t.photo.conversionFailed))), 'image/jpeg', 0.92),
   )
   return { blob, previewUrl: URL.createObjectURL(blob), width, height }
 }
@@ -33,7 +35,7 @@ export function loadImage(url: string): Promise<HTMLImageElement> {
     // Nécessaire pour dessiner une image S3 dans un canvas puis l'exporter.
     image.crossOrigin = 'anonymous'
     image.onload = () => resolve(image)
-    image.onerror = () => reject(new Error("Impossible de charger l'image."))
+    image.onerror = () => reject(new Error(t.photo.loadFailed))
     image.src = url
   })
 }

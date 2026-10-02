@@ -29,6 +29,7 @@ body {
 .hero {
   text-align: center;
   padding: 48px 16px 24px;
+  position: relative;
 }
 
 .hero h1 {
@@ -45,6 +46,25 @@ body {
   color: var(--green);
   display: inline-block;
   transform: rotate(4deg) scale(1.1);
+}
+
+.lang-switch {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  padding: 6px 12px;
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.lang-switch:hover {
+  border-color: var(--accent);
 }
 
 .hero p {
