@@ -1,0 +1,20 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+.local-storage/
+
+# Node / Vite
+node_modules/
+dist/
+*.local
+
+# AWS SAM
+.aws-sam/
+samconfig.toml
+
+# Divers
+.DS_Store
+Thumbs.db
+.idea/

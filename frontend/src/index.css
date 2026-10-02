@@ -1,0 +1,371 @@
+:root {
+  --bg: #fdf6ec;
+  --panel: #ffffff;
+  --text: #2b2118;
+  --muted: #7a6a5c;
+  --accent: #d62828;
+  --accent-dark: #a51d1d;
+  --green: #2a9d8f;
+  --border: #eadfce;
+  --radius: 16px;
+  font-family: 'Nunito', system-ui, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 10% 10%, #ffe8d6 0, transparent 40%),
+    radial-gradient(circle at 90% 30%, #e0f4f1 0, transparent 35%),
+    var(--bg);
+}
+
+.hero {
+  text-align: center;
+  padding: 48px 16px 24px;
+}
+
+.hero h1 {
+  font-family: 'Bangers', cursive;
+  font-size: clamp(2.4rem, 8vw, 4.5rem);
+  letter-spacing: 2px;
+  margin: 0;
+  color: var(--accent);
+  transform: rotate(-2deg);
+  text-shadow: 3px 3px 0 #ffd166;
+}
+
+.hero h1 span {
+  color: var(--green);
+  display: inline-block;
+  transform: rotate(4deg) scale(1.1);
+}
+
+.hero p {
+  color: var(--muted);
+  font-size: 1.1rem;
+}
+
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(80, 50, 20, 0.06);
+}
+
+h2,
+h3 {
+  margin-top: 0;
+  font-weight: 900;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.error {
+  color: var(--accent-dark);
+  background: #fde8e8;
+  padding: 10px 14px;
+  border-radius: 10px;
+}
+
+.dropzone {
+  border: 3px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 48px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  cursor: pointer;
+  color: var(--muted);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.dropzone:hover,
+.dropzone.dragging {
+  border-color: var(--accent);
+  background: #fff5f5;
+}
+
+.dropzone strong {
+  color: var(--text);
+  font-size: 1.2rem;
+}
+
+.dropzone-icon {
+  font-size: 3rem;
+}
+
+.dropzone.compact {
+  padding: 10px;
+  border-width: 2px;
+  margin-top: 8px;
+}
+
+.setup {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 24px;
+}
+
+.focus-picker {
+  position: relative;
+  cursor: crosshair;
+  border-radius: 12px;
+  overflow: hidden;
+  line-height: 0;
+}
+
+.focus-picker img {
+  width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+  user-select: none;
+}
+
+.focus-marker {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px var(--accent), 0 2px 8px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  transition: left 0.15s, top 0.15s;
+}
+
+.settings label,
+.editor-controls label,
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+input[type='range'] {
+  accent-color: var(--accent);
+}
+
+.effects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: 999px;
+  border: 2px solid var(--border);
+  background: #fff;
+  padding: 8px 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.chip.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--accent-dark);
+}
+
+.primary.big {
+  width: 100%;
+  padding: 16px;
+  font-size: 1.3rem;
+  font-family: 'Bangers', cursive;
+  letter-spacing: 1px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.result {
+  border-radius: 12px;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.15s;
+}
+
+.result:hover {
+  transform: rotate(-1.5deg) scale(1.03);
+}
+
+.result.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent);
+}
+
+.result img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.result span {
+  padding: 8px;
+}
+
+.editor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 24px;
+  align-items: start;
+}
+
+input:not([type]),
+textarea,
+select {
+  font: inherit;
+  font-weight: 400;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+}
+
+.row {
+  display: flex;
+  gap: 16px;
+  align-items: end;
+}
+
+.editor-controls label.checkbox {
+  flex-direction: row;
+  align-items: center;
+  font-weight: 400;
+}
+
+.swatches {
+  display: flex;
+  gap: 8px;
+}
+
+.swatch {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 2px var(--border);
+}
+
+.swatch.active {
+  box-shadow: 0 0 0 3px var(--text);
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.editor-preview {
+  position: sticky;
+  top: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.editor-preview canvas {
+  max-width: 100%;
+  max-height: 80vh;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  margin: 48px;
+  border: 5px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+footer {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 24px 16px 40px;
+}
+
+@media (max-width: 800px) {
+  .setup,
+  .editor-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-preview {
+    position: static;
+  }
+}
+
+.giant-face {
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 14px 0;
+  margin: 0 0 14px;
+}
+
+.giant-face legend {
+  font-weight: 900;
+  padding: 0 6px;
+}
+
+.giant-face .hint {
+  margin-top: 0;
+}
+
+.editor-preview canvas.clickable {
+  cursor: crosshair;
+}

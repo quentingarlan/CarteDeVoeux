@@ -1,0 +1,14 @@
+<!doctype html><html><head>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@900&display=swap" rel="stylesheet" />
+<style>body{margin:0;background:#888}canvas{height:100vh}</style></head><body>
+<canvas id="c"></canvas>
+<script type="module">
+import { renderCard } from '/src/card.ts'
+const img = new Image()
+img.onload = () => renderCard(document.getElementById('c'), img, {
+  format: 'A6', landscape: false, bleed: false, template: 'tete-xxl',
+  title: 'Bonne année 2027 !', message: '', font: 'Bangers', accent: '#1b5e20',
+  focusX: 0.5, focusY: 0.48, zoom: 2.6, forehead: 0.4, stretch: 4, nose: 0.72,
+})
+img.src = '/__visage-test.jpg'
+</script></body></html>
