@@ -19,14 +19,30 @@ export async function preparePhoto(file: File): Promise<PreparedPhoto> {
   const canvas = document.createElement('canvas')
   canvas.width = width
   canvas.height = height
-  const ctx = canvas.getContext('2d')!
-  ctx.drawImage(bitmap, 0, 0, width, height)
+  canvas.getContext('2d')!.drawImage(bitmap, 0, 0, width, height)
   bitmap.close()
+  return toPreparedPhoto(canvas)
+}
 
+/** Pivote la photo d'un quart de tour dans le sens horaire. */
+export async function rotatePhoto(photo: PreparedPhoto): Promise<PreparedPhoto> {
+  const bitmap = await createImageBitmap(photo.blob)
+  const canvas = document.createElement('canvas')
+  canvas.width = bitmap.height
+  canvas.height = bitmap.width
+  const ctx = canvas.getContext('2d')!
+  ctx.translate(canvas.width, 0)
+  ctx.rotate(Math.PI / 2)
+  ctx.drawImage(bitmap, 0, 0)
+  bitmap.close()
+  return toPreparedPhoto(canvas)
+}
+
+async function toPreparedPhoto(canvas: HTMLCanvasElement): Promise<PreparedPhoto> {
   const blob = await new Promise<Blob>((resolve, reject) =>
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error(t.photo.conversionFailed))), 'image/jpeg', 0.92),
   )
-  return { blob, previewUrl: URL.createObjectURL(blob), width, height }
+  return { blob, previewUrl: URL.createObjectURL(blob), width: canvas.width, height: canvas.height }
 }
 
 export function loadImage(url: string): Promise<HTMLImageElement> {

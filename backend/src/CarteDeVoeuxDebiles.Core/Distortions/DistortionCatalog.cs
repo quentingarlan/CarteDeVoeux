@@ -19,7 +19,7 @@ public sealed class DistortionCatalog
         new PancakeDistortion(),
         new WaveDistortion(),
         new MeltDistortion(),
-        new TwinsDistortion(),
+        new ExtremeDistortion(),
         new QuadrupletsDistortion(),
     ]);
 

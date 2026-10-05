@@ -56,14 +56,20 @@ public class DistortionTests
     }
 
     [Fact]
-    public void Twins_mirrors_left_half_onto_right_half()
+    public void Extreme_stretches_the_face_to_every_edge_of_the_frame()
     {
-        var source = Gradient(101, 10);
+        var source = Gradient(201, 201);
 
-        var result = new TwinsDistortion().Apply(source, new DistortionSettings(0.5f, 0.5f));
+        var result = new ExtremeDistortion().Apply(source, new DistortionSettings(0.5f, 0.5f, 0.5f));
 
-        for (var x = 0; x <= 50; x++)
-            Assert.Equal(result[x, 5], result[100 - x, 5]);
+        // Intensité 0,5 : demi-visage de 201 × 0,23 ≈ 46 px de large, 60 px de haut.
+        // Les bords du cadre affichent le contour du visage, le centre reste sur le nez.
+        var redAt = (uint p) => (int)(p & 0xFF);
+        var greenAt = (uint p) => (int)((p >> 8) & 0xFF);
+        Assert.Equal(source[100, 100], result[100, 100]);
+        Assert.InRange(redAt(result[0, 100]), redAt(source[52, 100]), redAt(source[56, 100]));
+        Assert.InRange(redAt(result[200, 100]), redAt(source[144, 100]), redAt(source[148, 100]));
+        Assert.InRange(greenAt(result[100, 0]), greenAt(source[100, 38]), greenAt(source[100, 42]));
     }
 
     [Fact]

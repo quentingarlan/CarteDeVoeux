@@ -129,7 +129,7 @@ Resources:
         SigningBehavior: always
         SigningProtocol: sigv4
 
-  # S3 ne sert pas index.html pour un dossier : /en/ et /en deviennent /en/index.html.
+  # S3 ne sert pas index.html pour un dossier : /en/ devient /en/index.html.
   IndexRewriteFunction:
     Type: AWS::CloudFront::Function
     Properties:
@@ -139,9 +139,20 @@ Resources:
         Comment: Dossiers vers index.html
         Runtime: cloudfront-js-2.0
       FunctionCode: |
+        function redirect(location) {
+          return { statusCode: 301, statusDescription: 'Moved Permanently', headers: { location: { value: location } } };
+        }
         function handler(event) {
           var request = event.request;
           var uri = request.uri;
+          var host = request.headers.host ? request.headers.host.value : '';
+          // Une seule URL par page pour Google : www -> domaine nu, /en -> /en/.
+          if (host.indexOf('www.') === 0) {
+            return redirect('https://' + host.substring(4) + uri);
+          }
+          if (uri === '/en') {
+            return redirect('/en/');
+          }
           if (uri.endsWith('/')) {
             request.uri = uri + 'index.html';
           } else if (uri.lastIndexOf('.') < uri.lastIndexOf('/')) {

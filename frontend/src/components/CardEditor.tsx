@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { BACKGROUNDS, composeOnBackground, type BackgroundId } from '../backgrounds'
 import {
   FONTS,
   TEMPLATES,
@@ -20,6 +21,12 @@ const ACCENTS = ['#c62828', '#1b5e20', '#0d47a1', '#6a1b9a', '#ef6c00', '#212121
 export function CardEditor({ imageUrl, effectName, focus }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null)
   const [photo, setPhoto] = useState<HTMLImageElement | null>(null)
+  const [background, setBackground] = useState<BackgroundId>('aucun')
+  /** Photo posée sur le décor choisi (null : photo telle quelle). */
+  const [composed, setComposed] = useState<HTMLImageElement | null>(null)
+  const [cuttingOut, setCuttingOut] = useState(false)
+  // Le détourage est coûteux : calculé une seule fois par photo, puis réutilisé pour chaque décor.
+  const cutout = useRef<Promise<HTMLCanvasElement> | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [options, setOptions] = useState<CardOptions>({
     format: 'A6',
@@ -51,9 +58,30 @@ export function CardEditor({ imageUrl, effectName, focus }: Props) {
     }
   }, [imageUrl])
 
+  const chooseBackground = async (id: BackgroundId) => {
+    setBackground(id)
+    if (composed) URL.revokeObjectURL(composed.src)
+    setComposed(null)
+    if (!photo || id === 'aucun') return
+    setError(null)
+    setCuttingOut(true)
+    try {
+      cutout.current ??= import('../segmentation').then(({ cutOut }) => cutOut(photo))
+      setComposed(await composeOnBackground(await cutout.current, id))
+    } catch {
+      cutout.current = null
+      setError(t.editor.backgroundFailed)
+      setBackground('aucun')
+    } finally {
+      setCuttingOut(false)
+    }
+  }
+
+  const cardPhoto = composed ?? photo
+
   useEffect(() => {
-    if (photo && canvas.current) renderCard(canvas.current, photo, options).catch((e: Error) => setError(e.message))
-  }, [photo, options])
+    if (cardPhoto && canvas.current) renderCard(canvas.current, cardPhoto, options).catch((e: Error) => setError(e.message))
+  }, [cardPhoto, options])
 
   /** Tête XXL : le point cliqué dans l'aperçu devient le nouveau centre (placé au niveau du nez). */
   const recenter = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -118,6 +146,16 @@ export function CardEditor({ imageUrl, effectName, focus }: Props) {
               ))}
             </select>
           </label>
+          <label>
+            {t.editor.background}
+            <select value={background} onChange={(e) => chooseBackground(e.target.value as BackgroundId)} disabled={!photo || cuttingOut}>
+              {BACKGROUNDS.map((id) => (
+                <option key={id} value={id}>{t.editor.backgrounds[id]}</option>
+              ))}
+            </select>
+          </label>
+          {cuttingOut && <p className="hint">{t.editor.cuttingOut}</p>}
+          {background !== 'aucun' && giantFace && !cuttingOut && <p className="hint">{t.editor.backgroundHint}</p>}
           {giantFace && (
             <fieldset className="giant-face">
               <legend>{t.editor.framing}</legend>

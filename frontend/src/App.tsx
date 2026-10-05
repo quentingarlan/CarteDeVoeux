@@ -4,7 +4,7 @@ import { CardEditor } from './components/CardEditor'
 import { FocusPicker, type Focus } from './components/FocusPicker'
 import { PhotoDrop } from './components/PhotoDrop'
 import { effectName, switchLanguage, t } from './i18n'
-import { preparePhoto, type PreparedPhoto } from './photo'
+import { preparePhoto, rotatePhoto, type PreparedPhoto } from './photo'
 
 const BUY_ME_A_COFFEE_URL = 'https://buymeacoffee.com/quentingarlan'
 
@@ -39,6 +39,23 @@ export default function App() {
       setResults([])
       setChosen(null)
       setFocus({ x: 0.5, y: 0.4 })
+    } catch (e) {
+      setError((e as Error).message)
+    }
+  }
+
+  const rotate = async () => {
+    if (!photo) return
+    setError(null)
+    try {
+      const rotated = await rotatePhoto(photo)
+      URL.revokeObjectURL(photo.previewUrl)
+      setPhoto(rotated)
+      setUploadId(null)
+      setResults([])
+      setChosen(null)
+      // Le point visé suit la rotation horaire : (x, y) → (1 - y, x).
+      setFocus((f) => ({ x: 1 - f.y, y: f.x }))
     } catch (e) {
       setError((e as Error).message)
     }
@@ -99,6 +116,9 @@ export default function App() {
               <div>
                 <FocusPicker src={photo.previewUrl} focus={focus} onChange={setFocus} />
                 <p className="hint">{t.focusHint}</p>
+                <button type="button" onClick={rotate} disabled={!!busy}>
+                  {t.rotate}
+                </button>
                 <PhotoDrop onFile={choosePhoto} compact />
               </div>
               <div className="settings">

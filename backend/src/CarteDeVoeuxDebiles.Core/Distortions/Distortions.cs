@@ -168,15 +168,35 @@ public sealed class PancakeDistortion : AxisStretchDistortion
     protected override bool Vertical => false;
 }
 
-/// <summary>Recopie la moitié gauche en miroir sur la droite, à partir du point focal.</summary>
-public sealed class TwinsDistortion : WarpDistortion
+/// <summary>
+/// Étire une zone autour du point focal (le visage) jusqu'aux quatre bords du cadre : plus de décor,
+/// rien que la tête. Chaque côté est étiré séparément, pour remplir le cadre même si le nez est décentré,
+/// et une courbe puissance grossit le centre plus que les bords.
+/// </summary>
+public sealed class ExtremeDistortion : WarpDistortion
 {
-    public override string Id => "jumeaux";
-    public override string Name => "Jumeaux";
-    public override string Description => "Symétrie parfaite… et parfaitement dérangeante.";
+    public override string Id => "extreme";
+    public override string Name => "Extrême";
+    public override string Description => "Le visage étiré d'un bord à l'autre du cadre. Plus de place pour le décor.";
 
-    protected override InverseMap CreateMap(WarpContext c) =>
-        (x, y) => (x <= c.CenterX ? x : 2f * c.CenterX - x, y);
+    protected override InverseMap CreateMap(WarpContext c)
+    {
+        // Demi-taille supposée du visage dans la photo : plus l'intensité monte, plus on serre autour du nez.
+        var halfWidth = c.MinSide * (0.3f - 0.14f * c.Intensity);
+        var halfHeight = halfWidth * 1.3f;
+        var exponent = 1f + 0.9f * c.Intensity;
+
+        float Remap(float v, float center, float size, float half)
+        {
+            var edge = v < center ? center : size - 1 - center;
+            if (edge < 0.5f)
+                return center;
+            var n = (v - center) / edge;
+            return center + MathF.CopySign(MathF.Pow(MathF.Abs(n), exponent), n) * half;
+        }
+
+        return (x, y) => (Remap(x, c.CenterX, c.Width, halfWidth), Remap(y, c.CenterY, c.Height, halfHeight));
+    }
 }
 
 /// <summary>Miroir sur les deux axes autour du point focal : quatre fois la même tête.</summary>

@@ -50,9 +50,21 @@ try {
     finally { Pop-Location }
 
     Write-Host '==> Publication sur S3 / CloudFront' -ForegroundColor Cyan
-    # Les fichiers de dist/assets ont un hash dans leur nom : cache long. Les pages HTML (/ et /en/) : toujours revalidées.
-    Invoke-Native { aws s3 sync frontend/dist "s3://$bucket" --delete --region $Region --exclude '*.html' --cache-control 'public,max-age=31536000,immutable' }
-    Invoke-Native { aws s3 sync frontend/dist "s3://$bucket" --region $Region --exclude '*' --include '*.html' --cache-control 'no-cache' }
+    # Les fichiers de dist/assets ont un hash dans leur nom : cache long. Les pages HTML (/ et /en/), robots.txt et sitemap.xml : toujours revalidés.
+    Invoke-Native { aws s3 sync frontend/dist "s3://$bucket" --delete --region $Region --exclude '*.html' --exclude '*.wasm' --exclude 'robots.txt' --exclude 'sitemap.xml' --cache-control 'public,max-age=31536000,immutable' }
+    Invoke-Native { aws s3 sync frontend/dist "s3://$bucket" --region $Region --exclude '*' --include '*.html' --include 'robots.txt' --include 'sitemap.xml' --cache-control 'no-cache' }
+
+    # Le WebAssembly du détourage dépasse 10 Mo, limite au-delà de laquelle CloudFront ne compresse plus : on l'envoie déjà gzippé.
+    foreach ($wasm in Get-ChildItem frontend/dist -Recurse -Filter *.wasm) {
+        $gzipped = "$($wasm.FullName).gz"
+        $source = [IO.File]::OpenRead($wasm.FullName)
+        $target = [IO.File]::Create($gzipped)
+        $gzip = New-Object IO.Compression.GZipStream($target, [IO.Compression.CompressionLevel]::Optimal)
+        try { $source.CopyTo($gzip) } finally { $gzip.Dispose(); $target.Dispose(); $source.Dispose() }
+        $key = $wasm.FullName.Substring((Resolve-Path frontend/dist).Path.Length + 1).Replace('\', '/')
+        Invoke-Native { aws s3 cp $gzipped "s3://$bucket/$key" --region $Region --content-encoding gzip --content-type application/wasm --cache-control 'public,max-age=31536000,immutable' }
+        Remove-Item $gzipped
+    }
     Invoke-Native { aws cloudfront create-invalidation --distribution-id $distribution --paths '/' '/index.html' '/en/index.html' | Out-Null }
 
     Write-Host "`nC'est en ligne : $(& $output 'SiteUrl')" -ForegroundColor Green
