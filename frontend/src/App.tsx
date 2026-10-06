@@ -160,6 +160,20 @@ export default function App() {
             <CardEditor key={chosen.url} imageUrl={chosen.url} effectName={chosen.name} focus={focus} />
           </div>
         )}
+
+        <section className="panel seo">
+          <h2>{t.seo.title}</h2>
+          {t.seo.paragraphs.map((paragraph) => (
+            <p key={paragraph}>{paragraph}</p>
+          ))}
+          <h3>{t.seo.faqTitle}</h3>
+          {t.seo.faq.map(({ q, a }) => (
+            <details key={q}>
+              <summary>{q}</summary>
+              <p>{a}</p>
+            </details>
+          ))}
+        </section>
       </main>
 
       <footer>

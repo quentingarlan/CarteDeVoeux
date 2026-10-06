@@ -394,6 +394,35 @@ footer p {
   margin: 12px 0 0;
 }
 
+.seo {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.seo h2,
+.seo h3 {
+  color: var(--text);
+}
+
+.seo h3 {
+  margin: 20px 0 8px;
+}
+
+.seo details {
+  border-top: 1px solid var(--border);
+  padding: 10px 0;
+}
+
+.seo summary {
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.seo details p {
+  margin: 8px 0 0;
+}
+
 .coffee {
   display: inline-block;
   padding: 10px 20px;

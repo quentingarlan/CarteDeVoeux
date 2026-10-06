@@ -65,7 +65,7 @@ try {
         Invoke-Native { aws s3 cp $gzipped "s3://$bucket/$key" --region $Region --content-encoding gzip --content-type application/wasm --cache-control 'public,max-age=31536000,immutable' }
         Remove-Item $gzipped
     }
-    Invoke-Native { aws cloudfront create-invalidation --distribution-id $distribution --paths '/' '/index.html' '/en/index.html' | Out-Null }
+    Invoke-Native { aws cloudfront create-invalidation --distribution-id $distribution --paths '/' '/index.html' '/en/index.html' '/robots.txt' '/sitemap.xml' | Out-Null }
 
     Write-Host "`nC'est en ligne : $(& $output 'SiteUrl')" -ForegroundColor Green
 }

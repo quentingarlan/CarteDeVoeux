@@ -8,7 +8,7 @@ public class DistortionTests
     public static TheoryData<string> AllEffects()
     {
         var data = new TheoryData<string>();
-        foreach (var d in DistortionCatalog.Default.All)
+        foreach (var d in DistortionCatalog.Default.All.Where(d => d is not NoDistortion))
             data.Add(d.Id);
         return data;
     }
@@ -54,6 +54,20 @@ public class DistortionTests
 
         Assert.Equal(source.Pixels, result.Pixels);
     }
+
+    [Fact]
+    public void No_filter_leaves_the_image_untouched_even_at_full_intensity()
+    {
+        var source = Gradient();
+
+        var result = new NoDistortion().Apply(source, new DistortionSettings(0.3f, 0.6f, 1f));
+
+        Assert.Equal(source.Pixels, result.Pixels);
+    }
+
+    [Fact]
+    public void No_filter_comes_first_in_the_catalog() =>
+        Assert.IsType<NoDistortion>(DistortionCatalog.Default.All[0]);
 
     [Fact]
     public void Extreme_stretches_the_face_to_every_edge_of_the_frame()

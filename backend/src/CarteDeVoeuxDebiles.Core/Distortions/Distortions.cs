@@ -31,6 +31,16 @@ public readonly record struct WarpContext(int Width, int Height, float CenterX, 
     public float MinSide => Math.Min(Width, Height);
 }
 
+/// <summary>Aucune déformation : la photo telle quelle, pour les cartes sobres (ou les visages déjà débiles).</summary>
+public sealed class NoDistortion : IDistortion
+{
+    public string Id => "sans-filtre";
+    public string Name => "Sans filtre";
+    public string Description => "La photo telle quelle, sans déformation.";
+
+    public PixelBuffer Apply(PixelBuffer source, DistortionSettings settings) => source;
+}
+
 /// <summary>Fait tourner l'image autour du point focal, plus fort au centre.</summary>
 public sealed class SwirlDistortion : WarpDistortion
 {

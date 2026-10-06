@@ -103,6 +103,29 @@ const fr = {
     loading: 'Chargement',
     fileName: (format: string) => `carte-de-voeux-debile-${format}.png`,
   },
+  /** Texte visible pour le référencement : à garder synchronisé avec la FAQ JSON-LD de index.html. */
+  seo: {
+    title: 'Cartes de vœux gratuites à imprimer',
+    paragraphs: [
+      'CarteDeVoeuxDebiles est un générateur de cartes de vœux gratuites à imprimer : importez une photo, choisissez la déformation la plus ridicule, ajoutez votre message, puis téléchargez votre carte en haute définition (300 dpi) ou imprimez-la directement.',
+      "Bonne année, pot de départ d'un collègue, enterrement de vie de garçon (EVG) ou de jeune fille (EVJF) : créez une carte de vœux rigolote et personnalisée, 100 % gratuite et sans inscription.",
+    ],
+    faqTitle: 'Questions fréquentes',
+    faq: [
+      {
+        q: 'Les cartes de vœux sont-elles vraiment gratuites ?',
+        a: "Oui. La création, le téléchargement et l'impression des cartes sont entièrement gratuits, sans inscription.",
+      },
+      {
+        q: 'Comment imprimer ma carte de vœux ?',
+        a: 'Choisissez le format A6 (carte postale) ou A5, puis cliquez sur « Imprimer » ou téléchargez le PNG en 300 dpi. Cochez le fond perdu de 3 mm si vous passez par un imprimeur professionnel.',
+      },
+      {
+        q: 'Que deviennent mes photos ?',
+        a: 'Elles sont supprimées automatiquement sous 24 heures.',
+      },
+    ],
+  },
   percent: (value: number) => `${Math.round(value * 100)} %`,
   /** Ponctuation avant une valeur : espace insécable en français. */
   colon: ' :',
@@ -182,10 +205,33 @@ const en: Messages = {
     loading: 'Loading',
     fileName: (format: string) => `silly-greeting-card-${format}.png`,
   },
+  seo: {
+    title: 'Free printable greeting cards',
+    paragraphs: [
+      'CarteDeVoeuxDebiles is a free greeting card maker: upload a photo, pick the silliest distortion, add your message, then download your card in high resolution (300 dpi) or print it straight away.',
+      "Happy New Year, a colleague's leaving do, a stag do or a hen party: make a funny, personalised greeting card for free, with no sign-up.",
+    ],
+    faqTitle: 'Frequently asked questions',
+    faq: [
+      {
+        q: 'Are the greeting cards really free?',
+        a: 'Yes. Making, downloading and printing your cards is completely free, with no sign-up.',
+      },
+      {
+        q: 'How do I print my greeting card?',
+        a: 'Pick the A6 (postcard) or A5 format, then click “Print” or download the 300 dpi PNG. Tick the 3 mm bleed if you use a professional printer.',
+      },
+      {
+        q: 'What happens to my photos?',
+        a: 'They are deleted automatically within 24 hours.',
+      },
+    ],
+  },
   percent: (value: number) => `${Math.round(value * 100)}%`,
   /** Ponctuation avant une valeur : espace insécable en français. */
   colon: ':',
   effects: {
+    'sans-filtre': 'No filter',
     tourbillon: 'Whirlpool',
     'grosse-tete': 'Big head',
     'tete-de-fourmi': 'Ant head',

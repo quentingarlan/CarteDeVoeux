@@ -12,6 +12,7 @@ public sealed class DistortionCatalog
 
     public static DistortionCatalog Default { get; } = new(
     [
+        new NoDistortion(),
         new BulgeDistortion(),
         new PinchDistortion(),
         new SwirlDistortion(),
