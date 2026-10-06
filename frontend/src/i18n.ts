@@ -114,7 +114,7 @@ const fr = {
     faq: [
       {
         q: 'Les cartes de vœux sont-elles vraiment gratuites ?',
-        a: "Oui. La création, le téléchargement et l'impression des cartes sont entièrement gratuits, sans inscription.",
+        a: "Oui. La création, le téléchargement et l'impression des cartes sont entièrement gratuits, sans inscription. Si le site vous plaît, pensez à faire un don via le lien Buy Me a Coffee en bas de page.",
       },
       {
         q: 'Comment imprimer ma carte de vœux ?',
@@ -169,7 +169,7 @@ const en: Messages = {
       400: 'Invalid request. Please try again.',
       404: 'Photo not found (expired?). Please upload it again.',
       413: 'The photo is larger than 15 MB.',
-      429: 'Too many requests. Please wait a few seconds.',
+      429: 'Too many requests. Please try again in a moment.',
     },
   },
   editor: {
@@ -215,7 +215,7 @@ const en: Messages = {
     faq: [
       {
         q: 'Are the greeting cards really free?',
-        a: 'Yes. Making, downloading and printing your cards is completely free, with no sign-up.',
+        a: 'Yes. Making, downloading and printing your cards is completely free, with no sign-up. If you enjoy it, consider a donation through the Buy Me a Coffee link at the bottom of the page.',
       },
       {
         q: 'How do I print my greeting card?',

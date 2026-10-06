@@ -50,6 +50,8 @@ body {
 
 .lang-switch {
   position: absolute;
+  /* Le titre incliné (transform) passerait sinon par-dessus et capterait les clics. */
+  z-index: 1;
   top: 12px;
   right: 16px;
   padding: 6px 12px;

@@ -12,6 +12,15 @@ export type GenerateRequest = {
   intensity: number
 }
 
+export class ApiError extends Error {
+  readonly status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.status = status
+  }
+}
+
 async function readJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
     let message: string | undefined
@@ -21,7 +30,7 @@ async function readJson<T>(response: Response): Promise<T> {
     } catch {
       // corps vide ou non JSON
     }
-    throw new Error(t.api.byStatus[response.status] ?? message ?? t.api.status(response.status))
+    throw new ApiError(t.api.byStatus[response.status] ?? message ?? t.api.status(response.status), response.status)
   }
   return response.json() as Promise<T>
 }
@@ -30,13 +39,17 @@ export function getEffects(): Promise<Effect[]> {
   return fetch('/api/effects').then((r) => readJson<Effect[]>(r))
 }
 
-/** Envoie la photo directement sur S3 (URL présignée) et retourne son identifiant. */
+/** Envoie la photo directement sur S3 (POST présigné, taille plafonnée par S3) et retourne son identifiant. */
 export async function uploadPhoto(photo: Blob): Promise<string> {
-  const { uploadId, uploadUrl, contentType } = await fetch('/api/uploads', { method: 'POST' }).then((r) =>
-    readJson<{ uploadId: string; uploadUrl: string; contentType: string }>(r),
+  const { uploadId, uploadUrl, uploadFields } = await fetch('/api/uploads', { method: 'POST' }).then((r) =>
+    readJson<{ uploadId: string; uploadUrl: string; uploadFields: Record<string, string> }>(r),
   )
 
-  const response = await fetch(uploadUrl, { method: 'PUT', body: photo, headers: { 'Content-Type': contentType } })
+  const form = new FormData()
+  for (const [name, value] of Object.entries(uploadFields)) form.append(name, value)
+  // S3 ignore tout champ placé après le fichier.
+  form.append('file', photo)
+  const response = await fetch(uploadUrl, { method: 'POST', body: form })
   if (!response.ok) throw new Error(t.api.uploadFailed)
   return uploadId
 }

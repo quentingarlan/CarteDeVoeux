@@ -1,0 +1,112 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CarteDeVoeuxDebiles - WAF de la distribution CloudFront (a deployer en us-east-1)
+
+# Un WAF associe a CloudFront doit obligatoirement etre cree en us-east-1, alors que la stack principale
+# est ailleurs : d'ou cette petite stack separee, dont deploy.ps1 passe l'ARN a template.yaml.
+# Cout indicatif : 5 $/mois + 1 $/regle/mois + 0,60 $ par million de requetes.
+
+Resources:
+  WebAcl:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: !Sub '${AWS::StackName}'
+      Scope: CLOUDFRONT
+      DefaultAction:
+        Allow: {}
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub '${AWS::StackName}'
+      CustomResponseBodies:
+        # Meme format que les erreurs de l'API (ProblemDetails) : le site francais affiche le champ detail
+        # (accents en echappements JSON), le site anglais son propre message pour le statut 429.
+        TooManyRequests:
+          ContentType: APPLICATION_JSON
+          Content: '{"status":429,"title":"Too Many Requests","detail":"Trop de demandes depuis votre connexion : réessayez dans quelques minutes."}'
+      Rules:
+        # Generer des images coute plusieurs secondes de Lambda : c'est la cible d'un bot qui ferait gonfler la facture.
+        # 60 generations / 5 min par IP laisse de la marge a un bureau entier derriere la meme IP (pot de depart).
+        - Name: rate-limit-cards
+          Priority: 0
+          Action:
+            Block:
+              CustomResponse:
+                ResponseCode: 429
+                CustomResponseBodyKey: TooManyRequests
+          Statement:
+            RateBasedStatement:
+              Limit: 60
+              EvaluationWindowSec: 300
+              AggregateKeyType: IP
+              ScopeDownStatement:
+                ByteMatchStatement:
+                  FieldToMatch:
+                    UriPath: {}
+                  PositionalConstraint: STARTS_WITH
+                  SearchString: /api/cards
+                  TextTransformations:
+                    - Priority: 0
+                      Type: LOWERCASE
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: rate-limit-cards
+
+        # Chaque envoi peut deposer 15 Mo dans S3 ; le reste de l'API est bon marche mais ne doit pas etre martele.
+        - Name: rate-limit-api
+          Priority: 1
+          Action:
+            Block:
+              CustomResponse:
+                ResponseCode: 429
+                CustomResponseBodyKey: TooManyRequests
+          Statement:
+            RateBasedStatement:
+              Limit: 300
+              EvaluationWindowSec: 300
+              AggregateKeyType: IP
+              ScopeDownStatement:
+                ByteMatchStatement:
+                  FieldToMatch:
+                    UriPath: {}
+                  PositionalConstraint: STARTS_WITH
+                  SearchString: /api/
+                  TextTransformations:
+                    - Priority: 0
+                      Type: LOWERCASE
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: rate-limit-api
+
+        # IP connues pour des bots, scanners ou attaques (liste tenue a jour par AWS).
+        - Name: aws-ip-reputation
+          Priority: 2
+          OverrideAction:
+            None: {}
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesAmazonIpReputationList
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: aws-ip-reputation
+
+        # Charges utiles d'exploits connus (Log4Shell, chemins d'exploitation...).
+        - Name: aws-known-bad-inputs
+          Priority: 3
+          OverrideAction:
+            None: {}
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesKnownBadInputsRuleSet
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: aws-known-bad-inputs
+
+Outputs:
+  WebAclArn:
+    Value: !GetAtt WebAcl.Arn

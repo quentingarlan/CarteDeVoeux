@@ -13,6 +13,7 @@ dist/
 # AWS SAM
 .aws-sam/
 samconfig.toml
+deploy.config.psd1
 
 # Divers
 .DS_Store

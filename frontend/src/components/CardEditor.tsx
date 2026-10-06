@@ -123,10 +123,20 @@ export function CardEditor({ imageUrl, effectName, focus }: Props) {
     const win = window.open('', '_blank')
     if (!win) return setError(t.editor.allowPopups)
     track('card_printed', cardDetails())
-    win.document.write(`<!doctype html><title>${t.editor.printTitle}</title>
-      <style>@page{size:${w}mm ${h}mm;margin:0}html,body{margin:0}img{display:block;width:${w}mm;height:${h}mm}</style>
-      <img src="${dataUrl}" onload="setTimeout(()=>{print();close()},100)">`)
-    win.document.close()
+    // Page construite par le DOM, sans HTML ni gestionnaire inline : la CSP héritée par la fenêtre les bloquerait.
+    const doc = win.document
+    doc.title = t.editor.printTitle
+    const style = doc.createElement('style')
+    style.textContent = `@page{size:${w}mm ${h}mm;margin:0}html,body{margin:0}img{display:block;width:${w}mm;height:${h}mm}`
+    doc.head.append(style)
+    const img = doc.createElement('img')
+    img.onload = () =>
+      setTimeout(() => {
+        win.print()
+        win.close()
+      }, 100)
+    img.src = dataUrl
+    doc.body.append(img)
   }
 
   const [wMm, hMm] = paperSizeMm(options)

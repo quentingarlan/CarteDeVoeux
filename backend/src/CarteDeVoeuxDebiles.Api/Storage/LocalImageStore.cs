@@ -12,8 +12,31 @@ public sealed class LocalImageStore(IOptions<StorageOptions> options) : IImageSt
 
     private readonly string _root = Path.GetFullPath(options.Value.LocalPath);
 
-    public Task<string> GetUploadUrlAsync(string key, string contentType, CancellationToken ct) =>
-        Task.FromResult($"{RoutePrefix}/{key}");
+    public Task<PresignedUpload> CreateUploadAsync(string key, string contentType, long maxBytes, CancellationToken ct) =>
+        Task.FromResult(new PresignedUpload(
+            $"{RoutePrefix}/{key}",
+            new Dictionary<string, string> { ["Content-Type"] = contentType }));
+
+    public Task<int> CountFoldersAsync(string prefix, CancellationToken ct)
+    {
+        var directory = Resolve(prefix);
+        return Task.FromResult(Directory.Exists(directory) ? Directory.GetDirectories(directory).Length : 0);
+    }
+
+    public Task<bool> TryCreateAsync(string key, CancellationToken ct)
+    {
+        var path = Resolve(key);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        try
+        {
+            new FileStream(path, FileMode.CreateNew).Dispose();
+            return Task.FromResult(true);
+        }
+        catch (IOException) when (File.Exists(path))
+        {
+            return Task.FromResult(false);
+        }
+    }
 
     public async Task<byte[]?> ReadAsync(string key, long maxBytes, CancellationToken ct)
     {

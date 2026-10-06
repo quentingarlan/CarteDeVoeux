@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { track } from './analytics'
-import { generateImages, getEffects, uploadPhoto, type Effect, type GeneratedImage } from './api'
+import { ApiError, generateImages, getEffects, uploadPhoto, type Effect, type GeneratedImage } from './api'
 import { CardEditor } from './components/CardEditor'
 import { FocusPicker, type Focus } from './components/FocusPicker'
 import { PhotoDrop } from './components/PhotoDrop'
@@ -86,6 +86,8 @@ export default function App() {
       track('cards_generated', { count: images.length, intensity })
       setTimeout(() => document.getElementById('results')?.scrollIntoView({ behavior: 'smooth' }), 50)
     } catch (e) {
+      // Photo expirée ou trop de versions générées : le prochain clic la renverra.
+      if (e instanceof ApiError && (e.status === 404 || e.status === 429)) setUploadId(null)
       setError((e as Error).message)
       track('generation_failed')
     } finally {

@@ -8,10 +8,18 @@ namespace CarteDeVoeuxDebiles.Core.Imaging;
 /// </summary>
 public static class ImageCodec
 {
+    /// <summary>
+    /// Vérifié sur l'en-tête, avant décodage : quelques Ko suffisent à annoncer 50 000 × 50 000 px (10 Go en mémoire).
+    /// Le site envoie au plus 2400 px de côté, 40 Mpx laisse une large marge.
+    /// </summary>
+    public const long MaxDecodedPixels = 40_000_000;
+
     public static PixelBuffer Decode(Stream stream, int maxSide)
     {
         using var codec = SKCodec.Create(stream)
             ?? throw new InvalidImageException("Format d'image non reconnu.");
+        if ((long)codec.Info.Width * codec.Info.Height > MaxDecodedPixels)
+            throw new InvalidImageException("Image trop grande.");
 
         var info = new SKImageInfo(codec.Info.Width, codec.Info.Height, SKColorType.Rgba8888, SKAlphaType.Unpremul);
         using var decoded = SKBitmap.Decode(codec, info)

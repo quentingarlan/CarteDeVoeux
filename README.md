@@ -62,7 +62,19 @@ Prérequis : AWS CLI configurée, SAM CLI, .NET 8 SDK, Node 20+ et `dotnet tool 
 
 ```powershell
 ./deploy.ps1                       # URL CloudFront par défaut (xxxx.cloudfront.net)
+./deploy.ps1 -SkipWaf              # sans WAF
 ```
+
+Domaine, certificat et zone DNS sont lus dans `deploy.config.psd1`, non versionné : copiez `deploy.config.example.psd1`. Les paramètres passés en ligne de commande l'emportent sur le fichier.
+
+### Sécurité
+
+- **WAF** ([waf.yaml](waf.yaml), stack séparée en us-east-1, obligatoire pour CloudFront) : par IP, 60 générations et 300 appels d'API par tranche de 5 min (réponse 429), plus les listes gérées par AWS (IP malveillantes, exploits connus). Environ 9 $/mois + 0,60 $ par million de requêtes.
+- **API joignable uniquement via CloudFront** : CloudFront ajoute un en-tête secret `X-Origin-Verify`, l'API refuse toute requête qui ne le porte pas (donc les appels directs à l'URL execute-api, qui contourneraient le WAF).
+- **En-têtes de sécurité** (CSP stricte, HSTS, `nosniff`, anti-iframe) via une *response headers policy* CloudFront. Toute nouvelle ressource externe (police, script, API) doit être ajoutée à la CSP dans `template.yaml`.
+- **Umami est servi depuis le site** (`frontend/public/vendor/`) : aucun script tiers n'est exécuté. Pour le mettre à jour, téléchargez `https://cloud.umami.is/script.js`, relisez-le, enregistrez-le sous un nouveau nom daté (il est mis en cache un an) et mettez à jour les deux `index.html`.
+- **20 générations maximum par photo**, garanties même en cas de requêtes simultanées (réservation atomique d'un créneau par écriture conditionnelle S3).
+- Le stockage local (`Storage:Mode=Local`) et ses endpoints sans authentification refusent de démarrer hors de l'environnement `Development`.
 
 ### Avec le domaine cartedevoeuxdebiles.co
 

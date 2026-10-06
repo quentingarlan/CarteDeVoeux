@@ -12,15 +12,53 @@ public sealed class S3ImageStore(IAmazonS3 s3, IOptions<StorageOptions> options)
     private string Bucket => _options.BucketName
         ?? throw new InvalidOperationException("Storage:BucketName n'est pas configuré.");
 
-    public Task<string> GetUploadUrlAsync(string key, string contentType, CancellationToken ct) =>
-        s3.GetPreSignedURLAsync(new GetPreSignedUrlRequest
+    public async Task<PresignedUpload> CreateUploadAsync(string key, string contentType, long maxBytes, CancellationToken ct)
+    {
+        var response = await s3.CreatePresignedPostAsync(new CreatePresignedPostRequest
         {
             BucketName = Bucket,
             Key = key,
-            Verb = HttpVerb.PUT,
-            ContentType = contentType,
             Expires = DateTime.UtcNow.AddMinutes(10),
+            Fields = new Dictionary<string, string> { ["Content-Type"] = contentType },
+            Conditions =
+            [
+                S3PostCondition.ExactMatch("Content-Type", contentType),
+                S3PostCondition.ContentLengthRange(1, maxBytes),
+            ],
         });
+        return new PresignedUpload(response.Url, response.Fields);
+    }
+
+    public async Task<int> CountFoldersAsync(string prefix, CancellationToken ct)
+    {
+        var response = await s3.ListObjectsV2Async(new ListObjectsV2Request
+        {
+            BucketName = Bucket,
+            Prefix = prefix,
+            Delimiter = "/",
+        }, ct);
+        return response.CommonPrefixes?.Count ?? 0;
+    }
+
+    public async Task<bool> TryCreateAsync(string key, CancellationToken ct)
+    {
+        try
+        {
+            // Écriture conditionnelle S3 : refusée (412) si la clé existe, (409) si une autre écriture est en cours.
+            await s3.PutObjectAsync(new PutObjectRequest
+            {
+                BucketName = Bucket,
+                Key = key,
+                ContentBody = string.Empty,
+                IfNoneMatch = "*",
+            }, ct);
+            return true;
+        }
+        catch (AmazonS3Exception e) when (e.StatusCode is HttpStatusCode.PreconditionFailed or HttpStatusCode.Conflict)
+        {
+            return false;
+        }
+    }
 
     public async Task<byte[]?> ReadAsync(string key, long maxBytes, CancellationToken ct)
     {

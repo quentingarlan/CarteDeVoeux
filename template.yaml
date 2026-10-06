@@ -15,8 +15,13 @@ Parameters:
     Type: String
     Default: ''
     Description: Zone Route 53 du domaine. Si renseignee, les enregistrements DNS sont crees.
+  WebAclArn:
+    Type: String
+    Default: ''
+    Description: ARN du WAF (stack waf.yaml, en us-east-1) a associer a CloudFront. Vide = pas de WAF.
 
 Conditions:
+  HasWaf: !Not [!Equals [!Ref WebAclArn, '']]
   HasDomain: !And
     - !Not [!Equals [!Ref DomainName, '']]
     - !Not [!Equals [!Ref CertificateArn, '']]
@@ -52,7 +57,7 @@ Resources:
             ExpirationInDays: 1
       CorsConfiguration:
         CorsRules:
-          - AllowedMethods: [PUT, GET]
+          - AllowedMethods: [POST, GET]
             AllowedHeaders: ['*']
             # Ne pas referencer la distribution ici : cycle HttpApi -> fonction -> bucket -> distribution -> HttpApi.
             # Sans domaine, '*' reste sur : chaque acces exige de toute facon une URL presignee.
@@ -74,10 +79,14 @@ Resources:
     Properties:
       CodeUri: backend/src/CarteDeVoeuxDebiles.Api/
       Handler: CarteDeVoeuxDebiles.Api
+      # Plafond de facture si un bot boucle sur /api/cards : au-dela, les requetes sont refusees (429).
+      ReservedConcurrentExecutions: 20
       Environment:
         Variables:
           Storage__Mode: S3
           Storage__BucketName: !Ref ImagesBucket
+          # Meme valeur que l'en-tete ajoute par CloudFront (voir Distribution) : l'API refuse les appels directs.
+          OriginVerify__Secret: !Select [2, !Split ['/', !Ref AWS::StackId]]
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref ImagesBucket
@@ -161,6 +170,49 @@ Resources:
           return request;
         }
 
+  # En-tetes de securite sur toutes les reponses. La CSP n'autorise que :
+  # - les scripts du site (Umami est copie localement) et le WebAssembly du detourage ('wasm-unsafe-eval') ;
+  # - Google Fonts ; les styles inline (attributs style de React, page d'impression) ;
+  # - le bucket d'images (envoi presigne, affichage des resultats) et l'API d'Umami.
+  SecurityHeadersPolicy:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: !Sub '${AWS::StackName}-security-headers'
+        SecurityHeadersConfig:
+          ContentSecurityPolicy:
+            Override: true
+            ContentSecurityPolicy: !Sub >-
+              default-src 'self';
+              script-src 'self' 'wasm-unsafe-eval';
+              style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+              font-src 'self' https://fonts.gstatic.com;
+              img-src 'self' data: blob: https://${ImagesBucket.RegionalDomainName} https://${ImagesBucket.DomainName};
+              connect-src 'self' https://${ImagesBucket.RegionalDomainName} https://${ImagesBucket.DomainName} https://gateway.umami.is;
+              worker-src 'self' blob:;
+              object-src 'none';
+              base-uri 'self';
+              form-action 'self';
+              frame-ancestors 'none';
+              upgrade-insecure-requests
+          ContentTypeOptions:
+            Override: true
+          FrameOptions:
+            FrameOption: DENY
+            Override: true
+          ReferrerPolicy:
+            ReferrerPolicy: strict-origin-when-cross-origin
+            Override: true
+          StrictTransportSecurity:
+            AccessControlMaxAgeSec: 31536000
+            IncludeSubdomains: true
+            Override: true
+        CustomHeadersConfig:
+          Items:
+            - Header: Permissions-Policy
+              Value: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+              Override: true
+
   # Un seul domaine : / -> site React, /api/* -> Lambda. Pas de CORS a gerer pour l'API.
   Distribution:
     Type: AWS::CloudFront::Distribution
@@ -171,6 +223,7 @@ Resources:
         DefaultRootObject: index.html
         HttpVersion: http2and3
         PriceClass: PriceClass_100
+        WebACLId: !If [HasWaf, !Ref WebAclArn, !Ref AWS::NoValue]
         Aliases: !If
           - HasDomain
           - [!Ref DomainName, !Sub 'www.${DomainName}']
@@ -189,6 +242,11 @@ Resources:
               OriginAccessIdentity: ''
           - Id: api
             DomainName: !Sub '${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+            # Prouve a l'API que la requete vient de CloudFront (et a donc passe le WAF). Remplace tout en-tete
+            # du meme nom envoye par le visiteur. Partie aleatoire de l'ID de stack : stable, jamais exposee au site.
+            OriginCustomHeaders:
+              - HeaderName: X-Origin-Verify
+                HeaderValue: !Select [2, !Split ['/', !Ref AWS::StackId]]
             CustomOriginConfig:
               OriginProtocolPolicy: https-only
               OriginSSLProtocols: [TLSv1.2]
@@ -197,6 +255,7 @@ Resources:
           ViewerProtocolPolicy: redirect-to-https
           Compress: true
           CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # Managed-CachingOptimized
+          ResponseHeadersPolicyId: !Ref SecurityHeadersPolicy
           FunctionAssociations:
             - EventType: viewer-request
               FunctionARN: !GetAtt IndexRewriteFunction.FunctionMetadata.FunctionARN
@@ -207,6 +266,7 @@ Resources:
             AllowedMethods: [GET, HEAD, OPTIONS, PUT, PATCH, POST, DELETE]
             CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # Managed-CachingDisabled
             OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # Managed-AllViewerExceptHostHeader
+            ResponseHeadersPolicyId: !Ref SecurityHeadersPolicy
 
   DnsRecords:
     Type: AWS::Route53::RecordSetGroup

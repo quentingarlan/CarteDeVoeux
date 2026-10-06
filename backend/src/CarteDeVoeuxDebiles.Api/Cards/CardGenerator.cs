@@ -4,7 +4,7 @@ using CarteDeVoeuxDebiles.Core.Imaging;
 
 namespace CarteDeVoeuxDebiles.Api.Cards;
 
-public sealed record CreateUploadResponse(string UploadId, string UploadUrl, string ContentType);
+public sealed record CreateUploadResponse(string UploadId, string UploadUrl, IReadOnlyDictionary<string, string> UploadFields);
 
 public sealed record GenerateRequest(
     string UploadId,
@@ -25,14 +25,17 @@ public sealed class CardGenerator(IImageStore store, DistortionCatalog catalog, 
     public const int MaxSide = 2000;
     public const long MaxUploadBytes = 15 * 1024 * 1024;
     public const string UploadContentType = "image/jpeg";
+    public const int MaxGenerationsPerUpload = 20;
 
     public static string UploadKey(Guid uploadId) => $"uploads/{uploadId:N}.jpg";
+
+    private static string ResultsPrefix(Guid uploadId) => $"results/{uploadId:N}/";
 
     public async Task<CreateUploadResponse> CreateUploadAsync(CancellationToken ct)
     {
         var uploadId = Guid.NewGuid();
-        var url = await store.GetUploadUrlAsync(UploadKey(uploadId), UploadContentType, ct);
-        return new CreateUploadResponse(uploadId.ToString("N"), url, UploadContentType);
+        var upload = await store.CreateUploadAsync(UploadKey(uploadId), UploadContentType, MaxUploadBytes, ct);
+        return new CreateUploadResponse(uploadId.ToString("N"), upload.Url, upload.Fields);
     }
 
     public async Task<IResult> GenerateAsync(GenerateRequest request, CancellationToken ct)
@@ -48,6 +51,12 @@ public sealed class CardGenerator(IImageStore store, DistortionCatalog catalog, 
                 return Results.Problem($"Effet inconnu : {id}", statusCode: StatusCodes.Status400BadRequest);
             distortions.Add(distortion);
         }
+
+        // Chaque génération coûte plusieurs secondes de Lambda : on empêche de boucler indéfiniment sur la même photo.
+        // Simple indication : c'est la réservation du créneau, plus bas, qui fait foi.
+        var firstFreeSlot = await store.CountFoldersAsync(ResultsPrefix(uploadId), ct);
+        if (firstFreeSlot >= MaxGenerationsPerUpload)
+            return TooManyGenerations();
 
         byte[]? original;
         try
@@ -76,20 +85,40 @@ public sealed class CardGenerator(IImageStore store, DistortionCatalog catalog, 
         logger.LogInformation("Génération de {Count} effets sur {Width}x{Height}", distortions.Count, source.Width, source.Height);
 
         // Les déformations sont déjà parallélisées par ligne : on les enchaîne, et seuls les envois au stockage se chevauchent.
+        // Un dossier par génération, numéroté : régénérer avec d'autres réglages ne réutilise pas une image en cache.
+        if (await ClaimSlotAsync(uploadId, firstFreeSlot, ct) is not { } slot)
+            return TooManyGenerations();
+        var generationPrefix = $"{ResultsPrefix(uploadId)}{slot:D2}/";
         var uploads = new List<Task<GeneratedImage>>();
         foreach (var distortion in distortions)
         {
             var jpeg = ImageCodec.EncodeJpeg(distortion.Apply(source, settings));
-            uploads.Add(StoreResultAsync(uploadId, distortion, jpeg, ct));
+            uploads.Add(StoreResultAsync(generationPrefix, distortion, jpeg, ct));
         }
 
         return Results.Ok(new GenerateResponse(await Task.WhenAll(uploads)));
     }
 
-    private async Task<GeneratedImage> StoreResultAsync(Guid uploadId, IDistortion distortion, byte[] jpeg, CancellationToken ct)
+    /// <summary>
+    /// Réserve atomiquement le premier créneau libre : des requêtes simultanées ne peuvent pas dépasser
+    /// <see cref="MaxGenerationsPerUpload"/>, ce que le seul comptage des dossiers ne garantissait pas.
+    /// </summary>
+    private async Task<int?> ClaimSlotAsync(Guid uploadId, int firstFreeSlot, CancellationToken ct)
     {
-        // Suffixe aléatoire : régénérer avec d'autres réglages ne réutilise pas une image en cache.
-        var key = $"results/{uploadId:N}/{distortion.Id}-{Guid.NewGuid():N}.jpg";
+        for (var slot = firstFreeSlot; slot < MaxGenerationsPerUpload; slot++)
+        {
+            if (await store.TryCreateAsync($"{ResultsPrefix(uploadId)}{slot:D2}/.claim", ct))
+                return slot;
+        }
+        return null;
+    }
+
+    private static IResult TooManyGenerations() =>
+        Results.Problem("Trop de versions pour cette photo : renvoyez-la pour continuer.", statusCode: StatusCodes.Status429TooManyRequests);
+
+    private async Task<GeneratedImage> StoreResultAsync(string generationPrefix, IDistortion distortion, byte[] jpeg, CancellationToken ct)
+    {
+        var key = $"{generationPrefix}{distortion.Id}.jpg";
         await store.WriteAsync(key, jpeg, "image/jpeg", ct);
         return new GeneratedImage(distortion.Id, distortion.Name, await store.GetDownloadUrlAsync(key, ct));
     }
