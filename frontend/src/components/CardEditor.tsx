@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { track } from '../analytics'
 import { BACKGROUNDS, composeOnBackground, type BackgroundId } from '../backgrounds'
 import {
   FONTS,
@@ -68,6 +69,7 @@ export function CardEditor({ imageUrl, effectName, focus }: Props) {
     try {
       cutout.current ??= import('../segmentation').then(({ cutOut }) => cutOut(photo))
       setComposed(await composeOnBackground(await cutout.current, id))
+      track('background_chosen', { background: id })
     } catch {
       cutout.current = null
       setError(t.editor.backgroundFailed)
@@ -99,7 +101,11 @@ export function CardEditor({ imageUrl, effectName, focus }: Props) {
     }))
   }
 
+  /** Ce qui décrit la carte finale, pour la mesure d'audience. */
+  const cardDetails = () => ({ format: options.format, template: options.template, background })
+
   const download = () => {
+    track('card_downloaded', cardDetails())
     canvas.current?.toBlob((blob) => {
       if (!blob) return
       const link = document.createElement('a')
@@ -116,6 +122,7 @@ export function CardEditor({ imageUrl, effectName, focus }: Props) {
     const dataUrl = canvas.current.toDataURL('image/jpeg', 0.95)
     const win = window.open('', '_blank')
     if (!win) return setError(t.editor.allowPopups)
+    track('card_printed', cardDetails())
     win.document.write(`<!doctype html><title>${t.editor.printTitle}</title>
       <style>@page{size:${w}mm ${h}mm;margin:0}html,body{margin:0}img{display:block;width:${w}mm;height:${h}mm}</style>
       <img src="${dataUrl}" onload="setTimeout(()=>{print();close()},100)">`)

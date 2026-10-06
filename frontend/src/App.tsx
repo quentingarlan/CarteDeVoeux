@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { track } from './analytics'
 import { generateImages, getEffects, uploadPhoto, type Effect, type GeneratedImage } from './api'
 import { CardEditor } from './components/CardEditor'
 import { FocusPicker, type Focus } from './components/FocusPicker'
@@ -39,6 +40,7 @@ export default function App() {
       setResults([])
       setChosen(null)
       setFocus({ x: 0.5, y: 0.4 })
+      track('photo_chosen')
     } catch (e) {
       setError((e as Error).message)
     }
@@ -81,9 +83,11 @@ export default function App() {
         intensity,
       })
       setResults(images.map((image) => ({ ...image, name: effectName(image.effectId, image.name) })))
+      track('cards_generated', { count: images.length, intensity })
       setTimeout(() => document.getElementById('results')?.scrollIntoView({ behavior: 'smooth' }), 50)
     } catch (e) {
       setError((e as Error).message)
+      track('generation_failed')
     } finally {
       setBusy(null)
     }
@@ -91,6 +95,7 @@ export default function App() {
 
   const choose = (image: GeneratedImage) => {
     setChosen(image)
+    track('card_chosen', { effect: image.effectId })
     setTimeout(() => document.getElementById('editor')?.scrollIntoView({ behavior: 'smooth' }), 50)
   }
 
@@ -177,7 +182,7 @@ export default function App() {
       </main>
 
       <footer>
-        <a className="coffee" href={BUY_ME_A_COFFEE_URL} target="_blank" rel="noopener noreferrer">
+        <a className="coffee" href={BUY_ME_A_COFFEE_URL} target="_blank" rel="noopener noreferrer" onClick={() => track('coffee_clicked')}>
           {t.coffee}
         </a>
         <p>{t.privacy}</p>
