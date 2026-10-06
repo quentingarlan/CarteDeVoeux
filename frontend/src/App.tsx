@@ -82,7 +82,10 @@ export default function App() {
         focusY: focus.y,
         intensity,
       })
-      setResults(images.map((image) => ({ ...image, name: effectName(image.effectId, image.name) })))
+      const named = images.map((image) => ({ ...image, name: effectName(image.effectId, image.name) }))
+      setResults(named)
+      // Tant que l'utilisateur n'a rien cliqué, la version sans filtre est sélectionnée.
+      setChosen(named.find((image) => image.effectId === 'sans-filtre') ?? null)
       track('cards_generated', { count: images.length, intensity })
       setTimeout(() => document.getElementById('results')?.scrollIntoView({ behavior: 'smooth' }), 50)
     } catch (e) {
