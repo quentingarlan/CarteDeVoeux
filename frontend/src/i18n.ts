@@ -39,6 +39,8 @@ const nextYear = new Date().getMonth() >= 9 ? new Date().getFullYear() + 1 : new
 
 const fr = {
   switchTo: { lang: 'en' as Lang, label: '🇬🇧 English' },
+  /** Sous-titre du H1 : porte les mots-clés principaux de la page. */
+  heroKicker: 'Cartes de vœux gratuites et rigolotes à imprimer',
   tagline: "Une photo. Des déformations. Des vœux que personne n'oubliera (malheureusement).",
   apiUnreachable: "Impossible de joindre l'API. Elle est peut-être partie fêter la nouvelle année.",
   step1: '1. Choisissez une photo',
@@ -137,6 +139,7 @@ type Messages = typeof fr
 
 const en: Messages = {
   switchTo: { lang: 'fr', label: '🇫🇷 Français' },
+  heroKicker: 'Free funny greeting cards to print',
   tagline: 'One photo. A few distortions. Greetings nobody will ever forget (sadly).',
   apiUnreachable: "Can't reach the API. It probably went out to celebrate New Year's Eve.",
   step1: '1. Pick a photo',
@@ -206,16 +209,25 @@ const en: Messages = {
     fileName: (format: string) => `silly-greeting-card-${format}.png`,
   },
   seo: {
-    title: 'Free printable greeting cards',
+    title: 'Free funny greeting cards to print',
     paragraphs: [
-      'CarteDeVoeuxDebiles is a free greeting card maker: upload a photo, pick the silliest distortion, add your message, then download your card in high resolution (300 dpi) or print it straight away.',
-      "Happy New Year, a colleague's leaving do, a stag do or a hen party: make a funny, personalised greeting card for free, with no sign-up.",
+      'CarteDeVoeuxDebiles makes free funny greeting cards from your own photos: upload a picture, pick the silliest face distortion, add your message, then download your card in high resolution (300 dpi) or print it straight away.',
+      "Happy New Year, a colleague's leaving do, a birthday, Christmas, a stag do or a hen party: every occasion deserves a funny greeting card that looks like nobody else's. No template to pay for, no watermark, no sign-up.",
+      'Unlike most free greeting cards online, yours is not a stock design: it is your friend, your boss or your cat, hilariously distorted. Print it at home in A6 (postcard) or A5, or send the PNG by email or WhatsApp.',
     ],
     faqTitle: 'Frequently asked questions',
     faq: [
       {
         q: 'Are the greeting cards really free?',
-        a: 'Yes. Making, downloading and printing your cards is completely free, with no sign-up. If you enjoy it, consider a donation through the Buy Me a Coffee link at the bottom of the page.',
+        a: 'Yes. Making, downloading and printing your cards is completely free, with no sign-up and no watermark. If you enjoy it, consider a donation through the Buy Me a Coffee link at the bottom of the page.',
+      },
+      {
+        q: 'How do I make a funny greeting card?',
+        a: 'Upload a photo, click the nose to centre the distortion, then hit “Distort!”. Pick your favourite result, add a title and a message, choose a template and a background: your funny greeting card is ready.',
+      },
+      {
+        q: 'Can I make funny birthday or Christmas cards?',
+        a: 'Of course. The default title is a New Year greeting, but you can write anything: happy birthday, merry Christmas, thank you, get well soon, good luck in your new job…',
       },
       {
         q: 'How do I print my greeting card?',

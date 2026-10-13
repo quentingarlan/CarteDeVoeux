@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Déploie cartesvoeuxdebiles.com : WAF (us-east-1), stack SAM (Lambda, S3, CloudFront), puis le site React.
+    Déploie cartesvoeuxdebiles.com : stack SAM (Lambda, S3, CloudFront), puis le site React.
 
 .DESCRIPTION
     Domaine, certificat et zone DNS sont lus dans deploy.config.psd1 (non versionné, voir deploy.config.example.psd1).
@@ -9,15 +9,13 @@
 .EXAMPLE
     ./deploy.ps1
     ./deploy.ps1 -DomainName '' -CertificateArn ''   # sans domaine : URL CloudFront par défaut
-    ./deploy.ps1 -SkipWaf                            # sans WAF (évite son coût mensuel)
 #>
 param(
     [string]$StackName = 'cartedevoeuxdebiles',
     [string]$Region = 'eu-central-1',
     [string]$DomainName,
     [string]$CertificateArn,
-    [string]$HostedZoneId,
-    [switch]$SkipWaf
+    [string]$HostedZoneId
 )
 
 $ErrorActionPreference = 'Stop'
@@ -44,15 +42,6 @@ try {
         }
     }
 
-    $webAclArn = ''
-    if (-not $SkipWaf) {
-        # Un WAF pour CloudFront ne peut exister qu'en us-east-1.
-        Write-Host '==> Déploiement du WAF (us-east-1)' -ForegroundColor Cyan
-        $wafStack = "$StackName-waf"
-        Invoke-Native { aws cloudformation deploy --stack-name $wafStack --region us-east-1 --template-file waf.yaml --no-fail-on-empty-changeset }
-        $webAclArn = Get-StackOutput $wafStack 'us-east-1' 'WebAclArn'
-    }
-
     Write-Host '==> Build de la Lambda .NET' -ForegroundColor Cyan
     Invoke-Native { sam build }
 
@@ -61,8 +50,6 @@ try {
     if ($DomainName) { $overrides += "DomainName=$DomainName" }
     if ($CertificateArn) { $overrides += "CertificateArn=$CertificateArn" }
     if ($HostedZoneId) { $overrides += "HostedZoneId=$HostedZoneId" }
-    # Omis avec -SkipWaf : la valeur par défaut (vide) détache un WAF associé lors d'un déploiement précédent.
-    if ($webAclArn) { $overrides += "WebAclArn=$webAclArn" }
     $deployArgs = @('deploy', '--stack-name', $StackName, '--region', $Region, '--capabilities', 'CAPABILITY_IAM',
         '--resolve-s3', '--no-confirm-changeset', '--no-fail-on-empty-changeset')
     if ($overrides) { $deployArgs += @('--parameter-overrides') + $overrides }

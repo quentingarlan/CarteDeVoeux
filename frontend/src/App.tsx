@@ -112,6 +112,7 @@ export default function App() {
         </button>
         <h1>
           CarteDeVoeux<span>Debiles</span>
+          <small>{t.heroKicker}</small>
         </h1>
         <p>{t.tagline}</p>
       </header>

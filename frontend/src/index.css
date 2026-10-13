@@ -48,6 +48,19 @@ body {
   transform: rotate(4deg) scale(1.1);
 }
 
+/* Sous-titre du H1 : porte les mots-clés principaux de la page. */
+.hero h1 small {
+  display: block;
+  margin-top: 12px;
+  font-family: 'Nunito', sans-serif;
+  font-size: clamp(1rem, 3vw, 1.3rem);
+  font-weight: 900;
+  letter-spacing: 0;
+  color: var(--text);
+  text-shadow: none;
+  transform: rotate(2deg);
+}
+
 .lang-switch {
   position: absolute;
   /* Le titre incliné (transform) passerait sinon par-dessus et capterait les clics. */

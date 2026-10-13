@@ -15,13 +15,8 @@ Parameters:
     Type: String
     Default: ''
     Description: Zone Route 53 du domaine. Si renseignee, les enregistrements DNS sont crees.
-  WebAclArn:
-    Type: String
-    Default: ''
-    Description: ARN du WAF (stack waf.yaml, en us-east-1) a associer a CloudFront. Vide = pas de WAF.
 
 Conditions:
-  HasWaf: !Not [!Equals [!Ref WebAclArn, '']]
   HasDomain: !And
     - !Not [!Equals [!Ref DomainName, '']]
     - !Not [!Equals [!Ref CertificateArn, '']]
@@ -223,7 +218,6 @@ Resources:
         DefaultRootObject: index.html
         HttpVersion: http2and3
         PriceClass: PriceClass_100
-        WebACLId: !If [HasWaf, !Ref WebAclArn, !Ref AWS::NoValue]
         Aliases: !If
           - HasDomain
           - [!Ref DomainName, !Sub 'www.${DomainName}']
@@ -242,7 +236,7 @@ Resources:
               OriginAccessIdentity: ''
           - Id: api
             DomainName: !Sub '${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
-            # Prouve a l'API que la requete vient de CloudFront (et a donc passe le WAF). Remplace tout en-tete
+            # Prouve a l'API que la requete vient de CloudFront (et a donc passe ses protections). Remplace tout en-tete
             # du meme nom envoye par le visiteur. Partie aleatoire de l'ID de stack : stable, jamais exposee au site.
             OriginCustomHeaders:
               - HeaderName: X-Origin-Verify

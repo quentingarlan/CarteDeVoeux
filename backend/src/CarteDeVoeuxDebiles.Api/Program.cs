@@ -34,7 +34,7 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 
-// En production, seul CloudFront (donc le WAF) doit pouvoir appeler l'API : il ajoute cet en-tête secret,
+// En production, seul CloudFront doit pouvoir appeler l'API : il ajoute cet en-tête secret,
 // et les appels directs à l'URL execute-api sont refusés avant tout traitement.
 if (app.Configuration["OriginVerify:Secret"] is { Length: > 0 } originSecret)
 {
